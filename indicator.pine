@@ -1,4 +1,3 @@
-// 3-candlesticks-indicator and more
 //@version=6
 indicator('Mod indicator', overlay = true)
 
