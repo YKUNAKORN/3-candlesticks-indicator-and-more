@@ -1,0 +1,66 @@
+// 3-candlesticks-indicator and more
+//@version=6
+indicator('Mod indicator', overlay = true)
+
+// === EMA and SMA ===
+ema7 = ta.ema(close, 7)
+ema30 = ta.ema(close, 30)
+sma99 = ta.sma(close, 99)
+
+plot(ema7, color=color.new(color.yellow, 60), title="EMA 7")      
+plot(ema30, color=color.new(color.orange, 60), title="EMA 30")    
+plot(sma99, color=color.new(color.red, 40), title="SMA 99", linewidth=2) 
+
+
+
+// === Bollinger Bands ===
+bbLength = 20
+bbStdDev = 2.0
+basis = ta.sma(close, bbLength)
+dev = bbStdDev * ta.stdev(close, bbLength)
+upper = basis + dev
+lower = basis - dev
+
+plot(upper, color=color.white, linewidth=1, title="BB Upper")
+plot(lower, color=color.white, linewidth=1, title="BB Lower")
+plot(basis, color=color.new(color.white, 50), title="BB Basis")
+
+
+
+// === ADX Calculation (Manual) ===
+adxLen = 14
+
+upMove   = high - high[1]
+downMove = low[1] - low
+
+plusDM  = (upMove > downMove and upMove > 0) ? upMove : 0
+minusDM = (downMove > upMove and downMove > 0) ? downMove : 0
+
+trur = ta.rma(ta.tr, adxLen)
+plusDI = 100 * ta.rma(plusDM, adxLen) / trur
+minusDI = 100 * ta.rma(minusDM, adxLen) / trur
+dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+adx = ta.rma(dx, adxLen)
+
+var label adxLabel = na
+if bar_index % 10 == 0
+    label.delete(adxLabel)
+    adxLabel := label.new(x=bar_index, y=high, text="ADX: " + str.tostring(adx, "#.##"),
+     style=label.style_label_down, color=color.new(color.gray, 80), textcolor=color.white)
+
+
+
+// === Strong Candle Function ===
+isStrongCandle(dir) =>
+    body = close - open
+    bodySize = math.abs(body)
+    wickSize = high - low - bodySize
+    isSameDir = dir == 1 and close > open or dir == -1 and close < open
+    isStrong = bodySize > 0.5 * (high - low)
+    isSameDir and isStrong
+
+upCond = isStrongCandle(1) and isStrongCandle(1)[1] and isStrongCandle(1)[2]
+downCond = isStrongCandle(-1) and isStrongCandle(-1)[1] and isStrongCandle(-1)[2]
+
+plotshape(upCond, title='3 Strong Green Candles', location=location.top, color=color.green, style=shape.cross, size=size.tiny)
+plotshape(downCond, title='3 Strong Red Candles', location=location.top, color=color.red, style=shape.cross, size=size.tiny)
