@@ -1,7 +1,7 @@
 //@version=5
 indicator(title="MA & EMA & Supertrend & CDC ActionZone & QQE signals", overlay=true, format=format.price, precision=6)
 
-//--- MA & EMA Section 🔨 ---
+//--- MA & EMA Section ---
 //MA
 MA7 = input.int(title="MA 7", defval=7, group = "MA Section 🔨")
 plot(ta.sma(close, MA7), color=color.yellow, linewidth=2, title="MA 7")
@@ -34,7 +34,7 @@ plot(ta.ema(close, EMA100), color=color.green, linewidth=2, title="EMA 100")
 EMA200 = input.int(title="EMA 200", defval=200, group = "EMA Section 🔨")
 plot(ta.ema(close, EMA200), color=color.blue, linewidth=2, title="EMA 200")
 
-//--- Supertrend Section 🔨 ---
+//--- Supertrend Section ---
 Periods = input.int(title="ATR Period", defval=10, group = "Supertrend section 🔨")
 src = input.source(title="Source", defval=ohlc4, group = "Supertrend section 🔨")
 Multiplier = input.float(title="ATR Multiplier", step=0.1, defval=3.1, group = "Supertrend section 🔨")
@@ -76,7 +76,7 @@ alertcondition(sellSignal, title="SuperTrend, Sell", message="SuperTrend Sell!")
 changeCond = trend != trend[1]
 alertcondition(changeCond, title="SuperTrend, Direction Change", message="SuperTrend has changed direction!")
 
-//--- CDC ActionZone V3 2020 Section 🔨 ---
+//--- CDC ActionZone V3 2020 Section ---
 xsrc = input.source(title="Source Data", defval=close, group = "CDC ActionZone section 🔨")
 xprd1 = input.int(title="Fast EMA period", defval=12, group = "CDC ActionZone section 🔨")
 xprd2 = input.int(title="Slow EMA period", defval=26, group = "CDC ActionZone section 🔨")
@@ -249,7 +249,7 @@ alertcondition(Red, title="is Red")
 alertcondition(Orange, title="is Orange (Strong Dip)")
 alertcondition(Yellow, title="is Yellow (Dip)")
 
-//--- QQE signals Section 🔨 ---
+//--- QQE signals Section ---
 RSI_Period = input.int(14, title='RSI Length', group = "QQE signals Section 🔨")
 SF = input.int(5, title='RSI Smoothing', group = "QQE signals Section 🔨")
 QQE_factor = input.float(4.238, title='Fast QQE Factor', group = "QQE signals Section 🔨")
