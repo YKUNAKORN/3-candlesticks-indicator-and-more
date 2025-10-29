@@ -1,7 +1,7 @@
 //@version=6
 indicator('Modified 3 Candle + EMA Logic', overlay = true)
 
-//=== Function: ตรวจว่าแท่งเทียนแข็งแรงหรือไม่ ===
+//=== Function ===
 isStrongCandle(dir) =>
     body = close - open
     bodySize = math.abs(body)
@@ -33,6 +33,6 @@ sellSignal = barstate.isconfirmed and downCond and emaBear
 plotshape(buySignal, title='Buy Signal', location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.small)
 plotshape(sellSignal, title='Sell Signal', location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small)
 
-//=== Alerts (ต้องอยู่นอก if) ===
+//=== Alerts ===
 alertcondition(buySignal, title='BUY Signal', message='Buy Signal: 3 Strong Green Candles + EMA Alignment')
 alertcondition(sellSignal, title='SELL Signal', message='Sell Signal: 3 Strong Red Candles + EMA Alignment')
