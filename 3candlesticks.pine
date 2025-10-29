@@ -1,0 +1,17 @@
+//@version=6
+indicator('Mod indicator', overlay = true)
+
+//--- 3 Candles stick Section ---
+isStrongCandle(dir) =>
+    body = close - open
+    bodySize = math.abs(body)
+    wickSize = high - low - bodySize
+    isSameDir = (dir == 1 and close > open) or (dir == -1 and close < open)
+    isStrong = bodySize > 0.6 * (high - low)
+    isSameDir and isStrong
+
+upCond = isStrongCandle(1) and isStrongCandle(1)[1] and isStrongCandle(1)[2]
+downCond = isStrongCandle(-1) and isStrongCandle(-1)[1] and isStrongCandle(-1)[2]
+
+plotshape(upCond, title='3 Strong Green Candles', location=location.top, color=color.green, style=shape.cross, size=size.tiny)
+plotshape(downCond, title='3 Strong Red Candles', location=location.top, color=color.red, style=shape.cross, size=size.tiny)
