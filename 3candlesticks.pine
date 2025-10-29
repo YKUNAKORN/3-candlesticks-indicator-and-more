@@ -1,17 +1,38 @@
 //@version=6
-indicator('Mod indicator', overlay = true)
+indicator('Modified 3 Candle + EMA Logic', overlay = true)
 
-//--- 3 Candles stick Section ---
+//=== Function: ตรวจว่าแท่งเทียนแข็งแรงหรือไม่ ===
 isStrongCandle(dir) =>
     body = close - open
     bodySize = math.abs(body)
     wickSize = high - low - bodySize
     isSameDir = (dir == 1 and close > open) or (dir == -1 and close < open)
-    isStrong = bodySize > 0.6 * (high - low)
+    isStrong = bodySize > 0.5 * (high - low)
     isSameDir and isStrong
 
+//=== 3 Candles Pattern ===
 upCond = isStrongCandle(1) and isStrongCandle(1)[1] and isStrongCandle(1)[2]
 downCond = isStrongCandle(-1) and isStrongCandle(-1)[1] and isStrongCandle(-1)[2]
 
-plotshape(upCond, title='3 Strong Green Candles', location=location.top, color=color.green, style=shape.cross, size=size.tiny)
-plotshape(downCond, title='3 Strong Red Candles', location=location.top, color=color.red, style=shape.cross, size=size.tiny)
+//=== EMA Conditions ===
+ema7 = ta.ema(close, 7)
+ema30 = ta.ema(close, 30)
+ema100 = ta.ema(close, 100)
+
+// Buy: EMA7 > EMA30 > EMA100
+emaBull = ema7 > ema30 and ema30 > ema100
+
+// Sell: EMA7 < EMA30 < EMA100
+emaBear = ema7 < ema30 and ema30 < ema100
+
+//=== Combine Candle + EMA Conditions ===
+buySignal = barstate.isconfirmed and upCond and emaBull
+sellSignal = barstate.isconfirmed and downCond and emaBear
+
+//=== Plot signals ===
+plotshape(buySignal, title='Buy Signal', location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.small)
+plotshape(sellSignal, title='Sell Signal', location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small)
+
+//=== Alerts (ต้องอยู่นอก if) ===
+alertcondition(buySignal, title='BUY Signal', message='Buy Signal: 3 Strong Green Candles + EMA Alignment')
+alertcondition(sellSignal, title='SELL Signal', message='Sell Signal: 3 Strong Red Candles + EMA Alignment')
