@@ -1,0 +1,299 @@
+//@version=5
+indicator(title="MA & EMA & Supertrend & CDC ActionZone & QQE signals", overlay=true, format=format.price, precision=6)
+
+//--- MA & EMA Section 🔨 ---
+//MA
+MA7 = input.int(title="MA 7", defval=7, group = "MA Section 🔨")
+plot(ta.sma(close, MA7), color=color.yellow, linewidth=2, title="MA 7")
+
+MA25 = input.int(title="MA 25", defval=25, group = "MA Section 🔨")
+plot(ta.sma(close, MA25), color=#FFB6C1, linewidth=2, title="MA 25")
+
+MA99 = input.int(title="MA 99", defval=99, group = "MA Section 🔨")
+plot(ta.sma(close, MA99), color=color.purple, linewidth=2, title="MA 99")
+
+//EMA
+EMA5 = input.int(title="EMA 5", defval=5, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA5), color=color.red, linewidth=2, title="EMA 5")
+
+EMA10 = input.int(title="EMA 10", defval=10, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA10), color=color.orange, linewidth=2, title="EMA 10")
+
+EMA25 = input.int(title="EMA 25", defval=25, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA25), color=color.yellow, linewidth=2, title="EMA 25")
+
+EMA50 = input.int(title="EMA 50", defval=50, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA50), color=color.white, linewidth=2, title="EMA 50")
+
+EMA75 = input.int(title="EMA 75", defval=75, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA75), color=color.gray, linewidth=2, title="EMA 75")
+
+EMA100 = input.int(title="EMA 100", defval=100, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA100), color=color.green, linewidth=2, title="EMA 100")
+
+EMA200 = input.int(title="EMA 200", defval=200, group = "EMA Section 🔨")
+plot(ta.ema(close, EMA200), color=color.blue, linewidth=2, title="EMA 200")
+
+//--- Supertrend Section 🔨 ---
+Periods = input.int(title="ATR Period", defval=10, group = "Supertrend section 🔨")
+src = input.source(title="Source", defval=ohlc4, group = "Supertrend section 🔨")
+Multiplier = input.float(title="ATR Multiplier", step=0.1, defval=3.1, group = "Supertrend section 🔨")
+changeATR = input.bool(title="Change ATR Calculation Method ?", defval=false, group = "Supertrend section 🔨")
+showsignals = input.bool(title="Show Buy/Sell Signals ?", defval=true, group = "Supertrend section 🔨")
+highlighting = input.bool(title="Highlighter On/Off ?", defval=false, group = "Supertrend section 🔨")
+
+atr2 = ta.sma(ta.tr, Periods)
+atr = changeATR ? ta.atr(Periods) : atr2
+up = src - (Multiplier * atr)
+up1 = nz(up[1], up)
+up := close[1] > up1 ? math.max(up, up1) : up
+dn = src + (Multiplier * atr)
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? math.min(dn, dn1) : dn
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+
+upPlot = plot(trend == 1 ? up : na, title="Supertrend, Up Trend", style=plot.style_linebr, linewidth=2, color=color.green)
+buySignal = trend == 1 and trend[1] == -1
+plotshape(buySignal ? up : na, title="Supertrend, UpTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=color.green)
+plotshape(buySignal and showsignals ? up : na, title="Supertrend, Buy", text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=color.green, textcolor=color.white)
+
+dnPlot = plot(trend == 1 ? na : dn, title="Supertrend, Down Trend", style=plot.style_linebr, linewidth=2, color=color.red)
+sellSignal = trend == -1 and trend[1] == 1
+plotshape(sellSignal ? dn : na, title="Supertrend, DownTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=color.red)
+plotshape(sellSignal and showsignals ? dn : na, title="Supertrend, Sell", text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.red, textcolor=color.white)
+mPlot = plot(ohlc4, title="", style=plot.style_circles, linewidth=0)
+
+longFillColor = highlighting ? (trend == 1 ? color.green : color.white) : color.white
+shortFillColor = highlighting ? (trend == -1 ? color.red : color.white) : color.white
+
+fill(mPlot, upPlot, title="Supertrend, UpTrend Highligter", color=longFillColor)
+fill(mPlot, dnPlot, title="Supertrend, DownTrend Highligter", color=shortFillColor)
+
+alertcondition(buySignal, title="SuperTrend, Buy", message="SuperTrend Buy!")
+alertcondition(sellSignal, title="SuperTrend, Sell", message="SuperTrend Sell!")
+changeCond = trend != trend[1]
+alertcondition(changeCond, title="SuperTrend, Direction Change", message="SuperTrend has changed direction!")
+
+//--- CDC ActionZone V3 2020 Section 🔨 ---
+xsrc = input.source(title="Source Data", defval=close, group = "CDC ActionZone section 🔨")
+xprd1 = input.int(title="Fast EMA period", defval=12, group = "CDC ActionZone section 🔨")
+xprd2 = input.int(title="Slow EMA period", defval=26, group = "CDC ActionZone section 🔨")
+xsmooth = input.int(title="Smoothing period (1 = no smoothing)", defval=1, group = "CDC ActionZone section 🔨")
+fillSW = input.bool(title="Paint Bar Colors", defval=true, group = "CDC ActionZone section 🔨")
+fastSW = input.bool(title="Show fast moving average line", defval=true, group = "CDC ActionZone section 🔨")
+slowSW = input.bool(title="Show slow moving average line", defval=true, group = "CDC ActionZone section 🔨")
+labelSwitch = input.bool(title="Turn on assistive text", defval=true, group = "CDC ActionZone section 🔨")
+plotSigsw = input.bool(title="Plot Buy/Sell Signals? ", defval=true, group = "CDC ActionZone section 🔨")
+plotRibsw = input.bool(title="Plot Buy/Sell Ribbon", defval=false, group = "CDC ActionZone section 🔨")
+plotRibbonPos = input.string(title="Ribbon Position", options=["Top", "Bottom"], defval="Top", group = "CDC ActionZone section 🔨")
+
+xfixtf = input.bool(title="** Use Fixed time frame Mode (advanced) **", defval=false, group = "CDC ActionZone section 🔨")
+xtf = input.string(title="** Fix chart to which time frame ? **)", defval="D", group = "CDC ActionZone section 🔨")
+
+plotSig2sw = input.bool(title="Plot momentum based Buy/Sell Signals? ", defval=false, group = "CDC ActionZone section 🔨")
+plotSig2lv = input.int(title="Set signal threshold (higher = stricter)", defval=1, minval=0, maxval=1, group = "CDC ActionZone section 🔨")
+
+//Calculate Indicators
+xPrice = ta.ema(xsrc, xsmooth)
+FastMA = xfixtf ?
+     ta.ema(request.security(syminfo.tickerid, xtf, ta.ema(xsrc, xprd1), 
+         gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_on), xsmooth)
+     :
+     ta.ema(xPrice, xprd1)
+SlowMA = xfixtf ?
+     ta.ema(request.security(syminfo.tickerid, xtf, ta.ema(xsrc, xprd2), 
+         gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_on), xsmooth)
+     :
+     ta.ema(xPrice, xprd2)
+
+Bull = FastMA > SlowMA
+Bear = FastMA < SlowMA
+
+// Define Color Zones
+Green = Bull and xPrice > FastMA
+Blue = Bear and xPrice > FastMA and xPrice > SlowMA
+LBlue = Bear and xPrice > FastMA and xPrice < SlowMA
+Red = Bear and xPrice < FastMA
+Orange = Bull and xPrice < FastMA and xPrice < SlowMA
+Yellow = Bull and xPrice < FastMA and xPrice > SlowMA
+
+// Display color on chart
+var bColor = color.black
+if Green
+    bColor := color.green
+else if Blue
+    bColor := color.blue
+else if LBlue
+    bColor := color.aqua
+else if Red
+    bColor := color.red
+else if Orange
+    bColor := color.orange
+else if Yellow
+    bColor := color.yellow
+
+barcolor(fillSW ? bColor : na, title = "CDC ActionZone, Bar Color")
+
+// Display MA lines
+FastL = plot(fastSW ? FastMA : na, "CDC ActionZone, Fast EMA", color=color.red)
+SlowL = plot(slowSW ? SlowMA : na, "CDC ActionZone, Slow EMA", color=color.blue)
+fillcolor = Bull ? color.green : Bear ? color.red : color.black
+fill(FastL, SlowL, fillcolor, title= "CDC ActionZone, Background")
+
+// Define Buy and Sell condition
+buycond = Green and not Green[1]
+sellcond = Red and not Red[1]
+
+bullish = ta.barssince(buycond) < ta.barssince(sellcond)
+bearish = ta.barssince(sellcond) < ta.barssince(buycond)
+
+buy = bearish[1] and buycond
+sell = bullish[1] and sellcond
+
+bColor_BullBear = bullish ? color.green : bearish ? color.red : color.black
+
+// Plot Buy and Sell point on chart
+plotshape(plotSigsw ? buy : na,
+     style=shape.circle,
+     title = "CDC ActionZone, Buy Signal",
+     location = location.belowbar,
+     color = color.green)
+plotshape(plotSigsw ? sell : na,
+     style=shape.circle,
+     title = "CDC ActionZone, Sell Signal",
+     location=location.abovebar,
+     color = color.red)
+
+// Display Buy/Sell Ribbon
+plotshape(plotRibsw and plotRibbonPos == "Top" ? close : na,
+     style=shape.square,
+     title = "CDC ActionZone, Buy/Sell Ribbon", 
+     location = location.top, 
+     color = bColor_BullBear)
+     
+plotshape(plotRibsw and plotRibbonPos == "Bottom" ? close : na,
+     style=shape.square,
+     title = "CDC ActionZone, Buy/Sell Ribbon", 
+     location = location.bottom, 
+     color = bColor_BullBear)
+
+// Label
+var label l1 = na
+labelstyle = close > SlowMA ? label.style_label_down : label.style_label_up
+labelyloc = close > SlowMA ? yloc.abovebar : yloc.belowbar
+labeltcolor = buy ? color.black : sell ? color.white : close > close[1] ? color.green : color.red
+labelbgcolor = buy ? color.green : sell ? color.red : color.silver
+labeltext = buy ? "BUY next bar\n" : sell ? "SELL next bar\n" : " "
+trendText = bullish ? "bullish" : bearish ? "bearish" : "sideways"
+
+if labelSwitch
+    l1 := label.new(bar_index, na,
+         text=labeltext + syminfo.ticker + " " + str.tostring(close) + " " + syminfo.currency + "\n currently in a " + trendText + " trend \n",
+         color = labelbgcolor, 
+         textcolor=labeltcolor, 
+         yloc=labelyloc, 
+         style=labelstyle)
+    label.delete(l1[1])
+else
+    label.delete(l1)
+
+// Momentum Signal using StochRSI
+smoothK = 3
+smoothD = 3
+RSIlen = 14
+STOlen = 14
+SRsrc = close
+OSlevel = 30
+OBlevel = 70
+
+rsi1 = ta.rsi(SRsrc, RSIlen)
+k = ta.sma(ta.stoch(rsi1, rsi1, rsi1, STOlen), smoothK)
+d = ta.sma(k, smoothD)
+
+storsiBuySig = bullish ?
+                     d < OSlevel and ta.crossover(k, d) ?
+                         2 :
+                         d > OSlevel and ta.crossover(k, d) ?
+                             1 :
+                             0
+                     :
+                     0
+
+storsiSellSig = bearish ?
+                     d > OBlevel and ta.crossunder(k, d) ?
+                         2 :
+                         d < OBlevel and ta.crossunder(k, d) ?
+                             1 :
+                             0
+                     :
+                     0
+
+plotshape(plotSig2sw and storsiBuySig > plotSig2lv ? storsiBuySig : na,
+     "CDC ActionZone, Buy more signals", style=shape.triangleup,
+     location=location.belowbar, color = color.teal)
+plotshape(plotSig2sw and storsiSellSig > plotSig2lv ? storsiSellSig : na,
+     "CDC ActionZone, Sell more signals", style=shape.triangledown,
+     location=location.abovebar, color = color.orange)
+
+// Alert conditions
+alertcondition(buy, title="*Buy Alert", message= "Buy {{exchange}}:{{ticker}}")
+alertcondition(sell, title="*Sell Alert", message= "Sell {{exchange}}:{{ticker}}")
+alertcondition(bullish, title="is Bullish")
+alertcondition(bearish, title="is Bearish")
+alertcondition(Green, title="is Green")
+alertcondition(Blue, title="is Blue (Strong Rally)")
+alertcondition(LBlue, title="is Light Blue (Rally)")
+alertcondition(Red, title="is Red")
+alertcondition(Orange, title="is Orange (Strong Dip)")
+alertcondition(Yellow, title="is Yellow (Dip)")
+
+//--- QQE signals Section 🔨 ---
+RSI_Period = input.int(14, title='RSI Length', group = "QQE signals Section 🔨")
+SF = input.int(5, title='RSI Smoothing', group = "QQE signals Section 🔨")
+QQE_factor = input.float(4.238, title='Fast QQE Factor', group = "QQE signals Section 🔨")
+ThreshHold = input.int(10, title="Thresh-hold", group = "QQE signals Section 🔨")
+
+src2 = close
+Wilders_Period = RSI_Period * 2 - 1
+
+Rsi = ta.rsi(src2, RSI_Period)
+RsiMa = ta.ema(Rsi, SF)
+AtrRsi = math.abs(RsiMa[1] - RsiMa)
+MaAtrRsi = ta.ema(AtrRsi, Wilders_Period)
+dar = ta.ema(MaAtrRsi, Wilders_Period) * QQE_factor
+
+var float longband = 0.0
+var float shortband = 0.0
+var int trend2 = 0
+
+DeltaFastAtrRsi = dar
+RSIndex = RsiMa
+newshortband = RSIndex + DeltaFastAtrRsi
+newlongband = RSIndex - DeltaFastAtrRsi
+longband := RSIndex[1] > longband[1] and RSIndex > longband[1] ? math.max(longband[1], newlongband) : newlongband
+shortband := RSIndex[1] < shortband[1] and RSIndex < shortband[1] ? math.min(shortband[1], newshortband) : newshortband
+cross_1 = ta.cross(longband[1], RSIndex)
+trend2 := ta.cross(RSIndex, shortband[1]) ? 1 : cross_1 ? -1 : nz(trend2[1], 1)
+FastAtrRsiTL = trend2 == 1 ? longband : shortband
+
+// Find all the QQE Crosses
+var int QQExlong = 0
+var int QQExshort = 0
+QQExlong := nz(QQExlong[1])
+QQExshort := nz(QQExshort[1])
+QQExlong := FastAtrRsiTL < RSIndex ? QQExlong + 1 : 0
+QQExshort := FastAtrRsiTL > RSIndex ? QQExshort + 1 : 0
+
+//Conditions
+qqeLong = QQExlong == 1 ? FastAtrRsiTL[1] - 50 : na
+qqeShort = QQExshort == 1 ? FastAtrRsiTL[1] - 50 : na
+
+// Plotting
+plotshape(qqeLong, title="QQE signals, long", text="Long", textcolor=color.white, style=shape.labelup, location=location.belowbar, color=color.green, size=size.tiny)
+plotshape(qqeShort, title="QQE signals, short", text="Short", textcolor=color.white, style=shape.labeldown, location=location.abovebar, color=color.red, size=size.tiny)
+
+// Alerts
+alertcondition(qqeLong, title="Long", message="Long")
+alertcondition(qqeShort, title="Short", message="Short")
