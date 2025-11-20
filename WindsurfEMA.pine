@@ -1,0 +1,53 @@
+//@version=5
+indicator("WindsurfEMA", shorttitle="WindsurfEMA", overlay=true)
+
+// EMA
+ema7   = ta.ema(close, 7)
+ema30  = ta.ema(close, 30)
+ema100 = ta.ema(close, 100)
+
+bullAlign = ema7 > ema30 and ema30 > ema100
+bearAlign = ema7 < ema30 and ema30 < ema100
+
+// Retrace
+retraceLong  = low <= ema30 and close > ema30
+retraceShort = high >= ema30 and close < ema30
+
+// Rejection
+rejectLong  = low <= ema30 and close > open
+rejectShort = high >= ema30 and close < open
+
+// PA Flip
+paFlipLong  = close > ema7
+paFlipShort = close < ema7
+
+// Entry conditions
+longEntry  = bullAlign and retraceLong and rejectLong and paFlipLong
+shortEntry = bearAlign and retraceShort and rejectShort and paFlipShort
+
+// Plot EMAs
+plot(ema7,   title="EMA 7",   color=color.new(color.green, 0))
+plot(ema30,  title="EMA 30",  color=color.new(color.orange, 0))
+plot(ema100, title="EMA 100", color=color.new(color.red, 0))
+
+// Alerts 
+alertcondition(longEntry,  title="Windsurf EMA Buy",  message="B")
+alertcondition(shortEntry, title="Windsurf EMA Sell", message="S")
+
+plotshape(longEntry,
+     title="BUY",
+     location=location.belowbar,
+     style=shape.labelup,
+     color=color.green,
+     text="B",
+     textcolor=color.white,
+     size=size.small)
+
+plotshape(shortEntry,
+     title="SELL",
+     location=location.abovebar,
+     style=shape.labeldown,
+     color=color.red,
+     text="S",
+     textcolor=color.white,
+     size=size.small)
